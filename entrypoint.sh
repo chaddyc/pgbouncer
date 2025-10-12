@@ -20,7 +20,7 @@ generate_pgbouncer_config() {
     
     cat > /etc/pgbouncer/pgbouncer.ini << EOF
 [databases]
-${PGBOUNCER_DATABASE} = host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME}
+${PGBOUNCER_DATABASE} = host=${PGBOUNCER_DB_HOST} port=${PGBOUNCER_DB_PORT} dbname=${PGBOUNCER_DB_NAME}
 
 [pgbouncer]
 listen_port = ${PGBOUNCER_PORT}
@@ -70,27 +70,45 @@ EOF
     echo "pidfile = /var/run/pgbouncer/pgbouncer.pid" >> /etc/pgbouncer/pgbouncer.ini
 }
 
-# Function to generate userlist.txt
+# Function to generate userlist.txt with support for multiple users
 generate_userlist() {
     log "Generating user authentication list..."
     
     # Validate required variables
-    if [ -z "${DB_USER}" ] || [ -z "${DB_PASSWORD}" ]; then
-        log "ERROR: DB_USER and DB_PASSWORD must be set"
+    if [ -z "${PGBOUNCER_DB_USER}" ] || [ -z "${PGBOUNCER_DB_PASSWORD}" ]; then
+        log "ERROR: PGBOUNCER_DB_USER and PGBOUNCER_DB_PASSWORD must be set"
         exit 1
     fi
     
-    # Create MD5 hash for the database user
-    local md5_hash
-    md5_hash=$(create_md5_hash "${DB_USER}" "${DB_PASSWORD}")
+    # Start with empty userlist
+    > /etc/pgbouncer/userlist.txt
     
-    # Generate userlist.txt
-    cat > /etc/pgbouncer/userlist.txt << EOF
-"${DB_USER}" "${md5_hash}"
-EOF
+    # Add primary database user
+    local md5_hash
+    md5_hash=$(create_md5_hash "${PGBOUNCER_DB_USER}" "${PGBOUNCER_DB_PASSWORD}")
+    echo "\"${PGBOUNCER_DB_USER}\" \"${md5_hash}\"" >> /etc/pgbouncer/userlist.txt
+    log "Added user: ${PGBOUNCER_DB_USER}"
+    
+    # Add additional users if specified
+    # Format: PGBOUNCER_ADDITIONAL_USERS="user1:pass1,user2:pass2,user3:pass3"
+    if [ -n "${PGBOUNCER_ADDITIONAL_USERS}" ]; then
+        log "Adding additional users..."
+        
+        # Parse comma-separated user:password pairs
+        echo "${PGBOUNCER_ADDITIONAL_USERS}" | tr ',' '\n' | while IFS=':' read -r username password; do
+            if [ -n "$username" ] && [ -n "$password" ]; then
+                local user_hash
+                user_hash=$(create_md5_hash "$username" "$password")
+                echo "\"${username}\" \"${user_hash}\"" >> /etc/pgbouncer/userlist.txt
+                log "Added user: ${username}"
+            fi
+        done
+    fi
     
     # Set proper permissions for userlist.txt (contains passwords)
     chmod 600 /etc/pgbouncer/userlist.txt
+    
+    log "User authentication list generated with $(wc -l < /etc/pgbouncer/userlist.txt) users"
 }
 
 # Function to validate configuration
@@ -98,7 +116,7 @@ validate_config() {
     log "Validating configuration..."
     
     # Check required environment variables
-    local required_vars="DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME PGBOUNCER_PORT"
+    local required_vars="PGBOUNCER_DB_HOST PGBOUNCER_DB_PORT PGBOUNCER_DB_USER PGBOUNCER_DB_PASSWORD PGBOUNCER_DB_NAME PGBOUNCER_PORT"
     for var in $required_vars; do
         eval "value=\$$var"
         if [ -z "$value" ]; then
@@ -108,7 +126,7 @@ validate_config() {
     done
     
     # Validate numeric values
-    local numeric_vars="DB_PORT PGBOUNCER_PORT PGBOUNCER_MAX_CLIENT_CONN PGBOUNCER_DEFAULT_POOL_SIZE"
+    local numeric_vars="PGBOUNCER_DB_PORT PGBOUNCER_PORT PGBOUNCER_MAX_CLIENT_CONN PGBOUNCER_DEFAULT_POOL_SIZE"
     for var in $numeric_vars; do
         eval "value=\$$var"
         if ! echo "$value" | grep -qE '^[0-9]+$'; then
@@ -119,8 +137,8 @@ validate_config() {
     
     # Test database connection
     log "Testing database connectivity..."
-    if ! PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "SELECT 1;" > /dev/null 2>&1; then
-        log "WARNING: Cannot connect to database ${DB_NAME} on ${DB_HOST}:${DB_PORT} as user ${DB_USER}"
+    if ! PGPASSWORD="${PGBOUNCER_DB_PASSWORD}" psql -h "${PGBOUNCER_DB_HOST}" -p "${PGBOUNCER_DB_PORT}" -U "${PGBOUNCER_DB_USER}" -d "${PGBOUNCER_DB_NAME}" -c "SELECT 1;" > /dev/null 2>&1; then
+        log "WARNING: Cannot connect to database ${PGBOUNCER_DB_NAME} on ${PGBOUNCER_DB_HOST}:${PGBOUNCER_DB_PORT} as user ${PGBOUNCER_DB_USER}"
         log "PgBouncer will start but database connections may fail until the database is available"
     else
         log "Database connection test successful"
@@ -176,7 +194,7 @@ main() {
     
     log "Configuration complete. Starting PgBouncer..."
     log "PgBouncer will listen on port ${PGBOUNCER_PORT}"
-    log "Database backend: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    log "Database backend: ${PGBOUNCER_DB_HOST}:${PGBOUNCER_DB_PORT}/${PGBOUNCER_DB_NAME}"
     log "Pool mode: ${PGBOUNCER_POOL_MODE}"
     log "Auth type: ${PGBOUNCER_AUTH_TYPE}"
     
