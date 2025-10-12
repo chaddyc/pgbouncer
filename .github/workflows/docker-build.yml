@@ -39,7 +39,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64,linux/arm64
           build-arg: PGBOUNCER_VERSION=${{env.PGBOUNCER_VERSION}}
-          push: false
+          push: true
           tags: chaddyc/${{ github.event.repository.name }}:${{env.PGBOUNCER_VERSION}}
 
       - name: Build PGBOUNCER latest
@@ -48,7 +48,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           build-arg: PGBOUNCER_VERSION=${{env.PGBOUNCER_VERSION}}
-          push: false
+          push: true
           tags: chaddyc/${{ github.event.repository.name }}:latest
 
       - name: Update docker readme description
