@@ -13,7 +13,7 @@ A production-ready, lightweight Docker container for [PgBouncer](https://www.pgb
 - **Lightweight**: Based on Alpine Linux for minimal resource usage
 - **Environment-driven Configuration**: Complete configuration through environment variables
 - **Automatic Setup**: Auto-generates `pgbouncer.ini` and `userlist.txt` on startup
-- **Security-focused**: MD5 password hashing, non-root execution, proper file permissions
+- **Security-focused**: Scram-sha-256 password hashing, non-root execution, proper file permissions
 - **Production-ready**: Health checks, graceful shutdown, comprehensive logging
 - **Easy Deployment**: Docker Compose support with PostgreSQL integration
 - **Validation**: Configuration validation and database connectivity testing
