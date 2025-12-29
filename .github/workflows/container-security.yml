@@ -1,0 +1,58 @@
+name: Container Security
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  PGBOUNCER_VERSION: 1.25.0
+  FORCE_COLOR: 1
+  CLICOLOR_FORCE: 1
+  TERM: xterm-256color
+
+jobs:
+  container-security-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build PGBOUNCER ${{ env.PGBOUNCER_VERSION }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          build-args: PGBOUNCER_VERSION=${{ env.PGBOUNCER_VERSION }}
+          push: false
+          tags: chaddyc/${{ github.event.repository.name }}:${{ env.PGBOUNCER_VERSION }}
+
+      - name: Build PGBOUNCER latest
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          build-args: PGBOUNCER_VERSION=${{ env.PGBOUNCER_VERSION }}
+          push: false
+          tags: chaddyc/${{ github.event.repository.name }}:latest
+
+      - name: Trivy scan - version ${{ env.PGBOUNCER_VERSION }}
+        uses: aquasecurity/trivy-action@0.33.0
+        with:
+          image-ref: 'chaddyc/${{ github.event.repository.name }}:${{ env.PGBOUNCER_VERSION }}'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+      - name: Trivy scan - latest
+        uses: aquasecurity/trivy-action@0.33.0
+        with:
+          image-ref: 'chaddyc/${{ github.event.repository.name }}:latest'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true

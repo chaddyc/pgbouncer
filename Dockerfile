@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.22.1
-ARG PGBOUNCER_VERSION=1.24.1
+ARG ALPINE_VERSION=3.23.2
+ARG PGBOUNCER_VERSION=1.25.0
 
 FROM alpine:${ALPINE_VERSION} AS build
 ARG PGBOUNCER_VERSION
@@ -23,7 +23,7 @@ RUN curl -sL http://www.pgbouncer.org/downloads/files/${PGBOUNCER_VERSION}/pgbou
     tar xzf pgbouncer.tar.gz; \
     cd pgbouncer-${PGBOUNCER_VERSION}; \
     sh ./configure --without-cares --with-udns; \
-    make
+    make pgbouncer
 
 FROM alpine:${ALPINE_VERSION}
 ARG ALPINE_VERSION
