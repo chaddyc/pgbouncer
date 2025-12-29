@@ -8,7 +8,7 @@ on:
         - main
 
 env:
-  PGBOUNCER_VERSION: 1.25.0
+  PGBOUNCER_VERSION: 1.25.1
 
 jobs:
   docker-build:
