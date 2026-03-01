@@ -42,7 +42,7 @@ jobs:
           tags: chaddyc/${{ github.event.repository.name }}:latest
 
       - name: Trivy scan - version ${{ env.PGBOUNCER_VERSION }}
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: 'chaddyc/${{ github.event.repository.name }}:${{ env.PGBOUNCER_VERSION }}'
           exit-code: '1'
@@ -50,7 +50,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Trivy scan - latest
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: 'chaddyc/${{ github.event.repository.name }}:latest'
           exit-code: '1'
