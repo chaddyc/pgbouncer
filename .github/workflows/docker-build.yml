@@ -10,7 +10,7 @@ env:
 
 jobs:
   docker-build:
-    # if: ${{ github.ref == 'refs/heads/main' && contains('["chaddyc"]', github.actor) }}
+    if: ${{ github.ref == 'refs/heads/main' && contains('["chaddyc"]', github.actor) }}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ github.token }}
