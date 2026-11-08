@@ -36,7 +36,7 @@ jobs:
         with:
           file: Dockerfile
           platforms: linux/amd64,linux/arm64
-          build-arg: PGBOUNCER_VERSION=${{env.PGBOUNCER_VERSION}}
+          build-args: PGBOUNCER_VERSION=${{env.PGBOUNCER_VERSION}}
           push: true
           tags: chaddyc/${{ github.event.repository.name }}:${{env.PGBOUNCER_VERSION}}
 
@@ -45,7 +45,7 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          build-arg: PGBOUNCER_VERSION=${{env.PGBOUNCER_VERSION}}
+          build-args: PGBOUNCER_VERSION=${{env.PGBOUNCER_VERSION}}
           push: true
           tags: chaddyc/${{ github.event.repository.name }}:latest
 
